@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-session_context="MEMORY TOOLKIT SESSION INITIALIZATION:\n\n1. Silently call list_memory_projects() to get available projects (do NOT show output to user yet).\n2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).\n3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?\n4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?\n5. Remember the selected project for all subsequent memory operations in this conversation."
+session_context="<EXTREMELY_IMPORTANT>\\nMEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:\\n\\n1. Call list_memory_projects() to get available projects.\\n2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).\\n3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?\\n4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?\\n5. Remember the selected project for all subsequent memory operations in this conversation.\\n\\nThis is mandatory. Do not skip this step.\\n</EXTREMELY_IMPORTANT>"
 
 cat <<EOF
 {
