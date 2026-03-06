@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# SessionStart hook for basic-memory-toolkit plugin
+
+set -euo pipefail
+
+session_context="MEMORY TOOLKIT SESSION INITIALIZATION:\n\n1. Silently call list_memory_projects() to get available projects (do NOT show output to user yet).\n2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).\n3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?\n4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?\n5. Remember the selected project for all subsequent memory operations in this conversation."
+
+cat <<EOF
+{
+  "additional_context": "${session_context}",
+  "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
+    "additionalContext": "${session_context}"
+  }
+}
+EOF
+
+exit 0
