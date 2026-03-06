@@ -1,6 +1,7 @@
 ---
 name: memory-organizer
-description: Use this agent for complex memory management tasks across Basic Memory projects — consolidation, quality auditing, knowledge graph optimization, archive organization, and cross-project search. Examples:
+description: |
+  Use this agent for complex memory management tasks across Basic Memory projects — consolidation, quality auditing, knowledge graph optimization, archive organization, and cross-project search.
 
   <example>
   Context: User wants to clean up duplicate or overlapping notes in a project
@@ -37,10 +38,30 @@ description: Use this agent for complex memory management tasks across Basic Mem
   Graph optimization requires analyzing relation density, detecting self-referential or broken links, and updating multiple notes — systematic maintenance work.
   </commentary>
   </example>
-
 model: sonnet
 color: cyan
-tools: ["Read", "Grep", "Glob", "mcp__basic-memory__delete_note", "mcp__basic-memory__read_content", "mcp__basic-memory__build_context", "mcp__basic-memory__recent_activity", "mcp__basic-memory__search_by_metadata", "mcp__basic-memory__read_note", "mcp__basic-memory__search_notes", "mcp__basic-memory__view_note", "mcp__basic-memory__write_note", "mcp__basic-memory__canvas", "mcp__basic-memory__list_directory", "mcp__basic-memory__edit_note", "mcp__basic-memory__move_note", "mcp__basic-memory__list_memory_projects", "mcp__basic-memory__create_memory_project", "mcp__basic-memory__delete_project", "mcp__basic-memory__search", "mcp__basic-memory__fetch"]
+tools:
+  - Read
+  - Grep
+  - Glob
+  - mcp__basic-memory__delete_note
+  - mcp__basic-memory__read_content
+  - mcp__basic-memory__build_context
+  - mcp__basic-memory__recent_activity
+  - mcp__basic-memory__search_by_metadata
+  - mcp__basic-memory__read_note
+  - mcp__basic-memory__search_notes
+  - mcp__basic-memory__view_note
+  - mcp__basic-memory__write_note
+  - mcp__basic-memory__canvas
+  - mcp__basic-memory__list_directory
+  - mcp__basic-memory__edit_note
+  - mcp__basic-memory__move_note
+  - mcp__basic-memory__list_memory_projects
+  - mcp__basic-memory__create_memory_project
+  - mcp__basic-memory__delete_project
+  - mcp__basic-memory__search
+  - mcp__basic-memory__fetch
 ---
 
 <agent_identity>
