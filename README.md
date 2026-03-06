@@ -20,7 +20,7 @@ A comprehensive Claude Code plugin for managing [Basic Memory](https://github.co
 
 ### Option 1: From GitHub (recommended)
 ```bash
-claude plugin add --marketplace https://github.com/ZivBA/basic-memory-toolkit.git basic-memory-toolkit
+claude plugin marketplace add https://github.com/ZivBA/basic-memory-toolkit.git basic-memory-toolkit
 ```
 
 ### Option 2: Plugin Directory (local development)
