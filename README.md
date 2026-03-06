@@ -18,12 +18,17 @@ A comprehensive Claude Code plugin for managing [Basic Memory](https://github.co
 
 ## Installation
 
-### Option 1: Plugin Directory
+### Option 1: From GitHub (recommended)
+```bash
+claude plugin add --marketplace https://github.com/zivben/basic-memory-toolkit.git basic-memory-toolkit
+```
+
+### Option 2: Plugin Directory (local development)
 ```bash
 claude --plugin-dir /path/to/basic-memory-toolkit
 ```
 
-### Option 2: Copy to Project
+### Option 3: Copy to Project
 ```bash
 cp -r basic-memory-toolkit /your/project/.claude-plugin/
 ```
@@ -89,7 +94,8 @@ Bundles Basic Memory MCP server configuration using `uvx` (zero-install). For ma
 ```
 basic-memory-toolkit/
 ├── .claude-plugin/
-│   └── plugin.json           # Plugin manifest
+│   ├── plugin.json           # Plugin manifest
+│   └── marketplace.json      # Marketplace registry for remote install
 ├── .mcp.json                 # Basic Memory MCP server config
 ├── skills/                   # 9 memory management skills
 │   ├── create-memory-note/

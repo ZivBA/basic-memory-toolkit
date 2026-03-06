@@ -1,0 +1,20 @@
+{
+  "name": "basic-memory-toolkit",
+  "description": "Comprehensive toolkit for managing Basic Memory knowledge bases with quality enforcement, structured workflows, and automated checks",
+  "owner": {
+    "name": "Ziv Ben"
+  },
+  "plugins": [
+    {
+      "name": "basic-memory-toolkit",
+      "description": "Comprehensive toolkit for managing Basic Memory knowledge bases — skills for note creation, quality enforcement, graph optimization, and project organization, plus an autonomous memory-organizer agent and automated quality hooks.",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "Ziv Ben"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/zivben/basic-memory-toolkit"
+    }
+  ]
+}
