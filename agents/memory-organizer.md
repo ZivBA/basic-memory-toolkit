@@ -1,43 +1,6 @@
 ---
 name: memory-organizer
-description: |
-  Use this agent for complex memory management tasks across Basic Memory projects — consolidation, quality auditing, knowledge graph optimization, archive organization, and cross-project search.
-
-  <example>
-  Context: User wants to clean up duplicate or overlapping notes in a project
-  user: "There are several notes about error handling in edifact-pipeline that overlap. Can you consolidate them?"
-  assistant: "I'll use the memory-organizer agent to review those notes for consolidation."
-  <commentary>
-  Consolidation of multiple notes requires searching, comparing content, merging, and archiving — a multi-step workflow ideal for this agent.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants to assess note quality across a project
-  user: "Run a quality audit on the phone-refactor project"
-  assistant: "I'll use the memory-organizer agent to audit note quality — checking titles, observations, relations, and metadata."
-  <commentary>
-  Quality auditing requires systematic review of many notes against memory-rules standards. This is a maintenance workflow the agent is designed for.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User needs information synthesized across multiple memory projects
-  user: "Search all projects for notes about Docker patterns and summarize what we have"
-  assistant: "I'll use the memory-organizer agent to search across projects and synthesize the results."
-  <commentary>
-  Cross-project search and synthesis requires navigating multiple projects, comparing results, and potentially creating summary notes — complex multi-step work.
-  </commentary>
-  </example>
-
-  <example>
-  Context: User wants to improve knowledge graph connectivity
-  user: "Find isolated notes in development-practices and strengthen their connections"
-  assistant: "I'll use the memory-organizer agent to analyze the knowledge graph and optimize relations."
-  <commentary>
-  Graph optimization requires analyzing relation density, detecting self-referential or broken links, and updating multiple notes — systematic maintenance work.
-  </commentary>
-  </example>
+description: "Use this agent for complex memory management tasks across Basic Memory projects — consolidation, quality auditing, knowledge graph optimization, archive organization, and cross-project search. Examples: consolidate overlapping notes, run quality audits, search across projects, optimize knowledge graph connections, organize archives."
 model: sonnet
 color: cyan
 tools:
@@ -63,6 +26,44 @@ tools:
   - mcp__basic-memory__search
   - mcp__basic-memory__fetch
 ---
+
+<examples>
+<example>
+Context: User wants to clean up duplicate or overlapping notes in a project
+user: "There are several notes about error handling in edifact-pipeline that overlap. Can you consolidate them?"
+assistant: "I'll use the memory-organizer agent to review those notes for consolidation."
+<commentary>
+Consolidation of multiple notes requires searching, comparing content, merging, and archiving — a multi-step workflow ideal for this agent.
+</commentary>
+</example>
+
+<example>
+Context: User wants to assess note quality across a project
+user: "Run a quality audit on the phone-refactor project"
+assistant: "I'll use the memory-organizer agent to audit note quality — checking titles, observations, relations, and metadata."
+<commentary>
+Quality auditing requires systematic review of many notes against memory-rules standards. This is a maintenance workflow the agent is designed for.
+</commentary>
+</example>
+
+<example>
+Context: User needs information synthesized across multiple memory projects
+user: "Search all projects for notes about Docker patterns and summarize what we have"
+assistant: "I'll use the memory-organizer agent to search across projects and synthesize the results."
+<commentary>
+Cross-project search and synthesis requires navigating multiple projects, comparing results, and potentially creating summary notes — complex multi-step work.
+</commentary>
+</example>
+
+<example>
+Context: User wants to improve knowledge graph connectivity
+user: "Find isolated notes in development-practices and strengthen their connections"
+assistant: "I'll use the memory-organizer agent to analyze the knowledge graph and optimize relations."
+<commentary>
+Graph optimization requires analyzing relation density, detecting self-referential or broken links, and updating multiple notes — systematic maintenance work.
+</commentary>
+</example>
+</examples>
 
 <agent_identity>
   <name>Memory Organizer</name>
