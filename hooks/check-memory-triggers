@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# UserPromptSubmit hook — check for memory trigger phrases
+# Only outputs context when triggers are detected; silent otherwise.
+
+set -euo pipefail
+
+# Read user prompt from stdin (Claude Code pipes it)
+user_prompt="$(cat)"
+
+# Convert to lowercase for matching
+lower_prompt="$(echo "$user_prompt" | tr '[:upper:]' '[:lower:]')"
+
+# Check for trigger phrases
+triggers=("remember this" "save to memory" "note this down" "save this as a note" "create a memory note" "record this" "save this to memory")
+
+found=false
+for trigger in "${triggers[@]}"; do
+    if [[ "$lower_prompt" == *"$trigger"* ]]; then
+        found=true
+        break
+    fi
+done
+
+# Also check for "always do X" / "never do Y" patterns (preference indicators)
+if [[ "$found" == "false" ]]; then
+    if echo "$lower_prompt" | grep -qP '(^|\s)(always|never)\s'; then
+        found=true
+    fi
+fi
+
+if [[ "$found" == "true" ]]; then
+    cat <<EOF
+{
+  "additional_context": "MEMORY TRIGGER DETECTED: The user's message contains a phrase indicating they want to save information to Basic Memory. Use the 'create-memory-note' skill for proper note creation with rule enforcement.",
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "MEMORY TRIGGER DETECTED: The user's message contains a phrase indicating they want to save information to Basic Memory. Use the 'create-memory-note' skill for proper note creation with rule enforcement."
+  }
+}
+EOF
+fi
+
+exit 0

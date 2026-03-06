@@ -27,8 +27,9 @@
     {
       "hooks": [
         {
-          "type": "prompt",
-          "prompt": "MEMORY TRIGGER DETECTION:\n\nScan the user's message for phrases that indicate they want to save information to Basic Memory. Trigger phrases include:\n- \"remember this\", \"save to memory\", \"note this down\", \"save this as a note\"\n- \"create a memory note\", \"record this\", \"save this to memory\"\n- \"always\" (as in \"always do X\" — indicates a preference to remember)\n- \"never\" (as in \"never do Y\" — indicates a rule to remember)\n\nIf a trigger phrase is detected:\n- Remind yourself to use the 'create-memory-note' skill for proper note creation with rule enforcement.\n- Do NOT inject the full skill content — just follow the skill workflow when creating the note.\n\nIf no trigger phrase is detected, ignore this hook entirely and do not mention it."
+          "type": "command",
+          "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' check-memory-triggers",
+          "async": false
         }
       ]
     }
