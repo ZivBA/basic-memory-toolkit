@@ -1,6 +1,6 @@
 {
   "name": "basic-memory-toolkit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Comprehensive toolkit for managing Basic Memory knowledge bases — skills for note creation, quality enforcement, graph optimization, and project organization, plus an autonomous memory-organizer agent and automated quality hooks.",
   "author": {
     "name": "Ziv Ben"
