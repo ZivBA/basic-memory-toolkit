@@ -1,0 +1,43 @@
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "MEMORY TOOLKIT SESSION INITIALIZATION:\n\n1. Silently call list_memory_projects() to get available projects (do NOT show output to user yet).\n2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against 'phone-refactor' project).\n3. If a match is found: Ask the user — \"I detected the Basic Memory project '[matched-project]' matches your current directory. Would you like to use it for this session, or choose a different project?\"\n4. If no match is found: Show the full project list and ask — \"Which Basic Memory project should I use for this session?\"\n5. Remember the selected project for all subsequent memory operations in this conversation."
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "MEMORY QUALITY CHECK — Self-Reference Detection:\n\nReview the note that was just created/edited. Check the Relations section for self-referential relations where the target entity matches the current note's title.\n\nExample of a self-referential relation (BAD):\n- Note title: \"My Example Note\"\n- Relation: `implements [[My Example Note]]`\n\nIf ANY self-referential relation is found:\n- WARN the user: \"Warning: Self-referential relation detected in '[note title]'. The relation '[[target]]' points to the note itself. This is a known anti-pattern. Consider removing or redirecting this relation.\"\n- Suggest a fix.\n\nIf no self-referential relations found, say nothing — do not mention this check.\n\nAlso check for cross-project WikiLinks:\n- If the note content contains WikiLinks ([[Target]]) where the target note exists in a DIFFERENT project than the one being written to, warn:\n- \"Warning: Cross-project WikiLink detected: [[target]]. WikiLinks don't work across project boundaries. Use text format instead: 'Target Title' (other-project).\"\n\nIf no issues found, remain completely silent about this check."
+        }
+      ]
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "MEMORY TRIGGER DETECTION:\n\nScan the user's message for phrases that indicate they want to save information to Basic Memory. Trigger phrases include:\n- \"remember this\", \"save to memory\", \"note this down\", \"save this as a note\"\n- \"create a memory note\", \"record this\", \"save this to memory\"\n- \"always\" (as in \"always do X\" — indicates a preference to remember)\n- \"never\" (as in \"never do Y\" — indicates a rule to remember)\n\nIf a trigger phrase is detected:\n- Remind yourself to use the 'create-memory-note' skill for proper note creation with rule enforcement.\n- Do NOT inject the full skill content — just follow the skill workflow when creating the note.\n\nIf no trigger phrase is detected, ignore this hook entirely and do not mention it."
+        }
+      ]
+    }
+  ],
+  "PreCompact": [
+    {
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "MEMORY CONTEXT PRESERVATION — Pre-Compaction Summary:\n\nBefore context is compacted, preserve the following information in your summary:\n\n1. **Active Memory Project**: Which Basic Memory project is selected for this session\n2. **Open Items/Issues**: Any problems identified but not yet resolved\n3. **Pending Tasks**: Work that was planned but not yet started or completed\n4. **Skipped/Deferred Items**: Anything the user said they'd handle later, or issues you raised that the user chose to defer (e.g., \"we'll fix that later\", \"skip that for now\", \"handle it next time\")\n5. **In-Progress Operations**: Any multi-step memory operations currently underway (consolidation, archiving, migration)\n6. **Key Decisions Made**: Important decisions about note organization, project structure, or rules that should persist\n\nInclude this context in the compaction summary so it survives context compression. Format it clearly so it can be picked up after compaction."
+        }
+      ]
+    }
+  ]
+}
