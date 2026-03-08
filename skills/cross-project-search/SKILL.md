@@ -78,8 +78,15 @@ References memory-rules for cross-project reference format.
 
 <cross_project_reference_format>
   <correct>"Note Title" (project-name)</correct>
+  <correct_url>memory://project-name/folder/Note Title</correct_url>
   <wrong>[[Note Title]] for different project</wrong>
   <verify>Search target project first to confirm note exists</verify>
+  <url_format>
+    Use memory:// URLs for unambiguous cross-project references:
+    - memory://main/docs/authentication
+    - memory://edifact-pipeline/pipeline-integration/EDIFACT PNR Processing Pipeline
+    URLs without project name still work for same-project: memory://folder/title
+  </url_format>
 </cross_project_reference_format>
 
 <placement_decision>

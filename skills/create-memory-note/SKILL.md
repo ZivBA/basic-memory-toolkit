@@ -15,8 +15,8 @@ Use this skill for EVERY new note creation to ensure quality standards.
       - search_notes(query="New Note Checklist", project="memory-rules")
       - search_notes(query="Relation Creation Rules", project="memory-rules")
     </step>
-    <step>Search current project for duplicates:
-      - search_notes(query="topic keywords", project="target-project")
+    <step>Search current project for duplicates using semantic search:
+      - search_notes(query="topic keywords", project="target-project", search_type="semantic")
     </step>
     <step>If potential duplicate found, decide: update existing or create new</step>
   </phase>
@@ -26,6 +26,7 @@ Use this skill for EVERY new note creation to ensure quality standards.
     <step>Prepare observations: 3-5 with specific categories</step>
     <step>Prepare tags: 3-5 relevant, lowercase hyphenated</step>
     <step>Choose folder: Appropriate for content type</step>
+    <step>If note_type is known, include it as a tag (e.g., "decision", "bug-report", "code-pattern")</step>
   </phase>
 
   <phase name="relation-verification">
@@ -51,6 +52,7 @@ Use this skill for EVERY new note creation to ensure quality standards.
 
   <phase name="creation">
     <step>Execute write_note() with prepared content</step>
+    <step>If a schema exists for this note type (e.g., design-decision, bug-report), set the frontmatter type field accordingly</step>
     <step>Verify creation: read_note() to confirm</step>
     <step>Check resolved vs unresolved relations in response</step>
   </phase>
@@ -64,6 +66,7 @@ Use this skill for EVERY new note creation to ensure quality standards.
     </step>
     <step>If YES: read per-project index note, append new entry-point link using edit_note()</step>
     <step>If NO (most cases): no index change needed</step>
+    <step>Index notes MUST use "documents" or "encompasses" relation types — NEVER "relates_to"</step>
   </phase>
 </workflow>
 

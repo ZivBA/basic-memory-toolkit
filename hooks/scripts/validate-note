@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# validate-note — Validate a note being written/edited
+#
+# Modes:
+#   blocking — PreToolUse: self-ref detection (instant, no CLI)
+#   warning  — PostToolUse: quality checks on content (instant, no CLI)
+#
+# All checks parse tool_input from hook stdin — zero CLI overhead.
+# CLI-dependent checks (broken wikilinks) are deferred to /validate-project.
+#
+# Exit codes:
+#   0 = pass
+#   2 = blocking error (stderr fed back to Claude)
+
+set -euo pipefail
+
+MODE="${1:-blocking}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Pipe stdin to Python validator script
+python3 "$PLUGIN_ROOT/validators/hook_validator.py" "$MODE"
+exit $?

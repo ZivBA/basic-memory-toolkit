@@ -63,6 +63,8 @@ Uses verify-memory-relations for detection, references memory-rules for fixes.
     <substep>Convert cross-project WikiLinks to text format</substep>
     <substep>Add strategic relations to isolated notes</substep>
     <substep>Strengthen weak connections with specific relation types</substep>
+    <substep>Convert informal sections ("## See Also", "## Related Components") to proper WikiLink relations</substep>
+    <step>For bulk WikiLink fixes across many notes, use the batch-fix-wikilinks skill</step>
   </phase>
 
   <phase name="verification">

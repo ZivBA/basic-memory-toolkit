@@ -32,6 +32,10 @@ Uses verify-memory-relations for relation checks, references memory-rules for st
     <step>Search for generic title patterns</step>
     <step>Sample notes across project folders</step>
     <step>Run recent_activity() to check recent additions</step>
+    <step>Use metadata_filters to efficiently filter by tags or note_types:
+      - search_notes(query="*", note_types=["schema"], project=target)
+      - search_notes(query="*", tags=["index"], project=target)
+    </step>
   </phase>
 
   <phase name="title_audit">

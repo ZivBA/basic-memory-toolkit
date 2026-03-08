@@ -51,6 +51,21 @@ Use after creating/editing notes or during quality audits.
     <severity>LOW - quality improvement opportunity</severity>
   </phase>
 
+  <phase name="check-informal-sections">
+    <step>Scan note content for informal relation sections that are invisible to the knowledge graph:</step>
+    <step>Flag these section headers:
+      - "## Related Components"
+      - "## Related Notes"
+      - "## Related Work"
+      - "## See Also"
+      - "## Related Documentation"
+      - "## References"
+    </step>
+    <step>These sections contain useful references but are NOT parsed by Basic Memory</step>
+    <severity>MEDIUM - content is invisible to graph, should be converted to WikiLink relations under ## Relations</severity>
+    <fix>Move references into ## Relations section as proper WikiLinks: - relation_type [[Target]]</fix>
+  </phase>
+
   <phase name="report">
     <step>Report findings by severity:</step>
     <format>

@@ -1,48 +1,71 @@
 {
   "hooks": {
     "SessionStart": [
-    {
-      "matcher": "startup|resume|clear|compact",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' session-start",
-          "async": false
-        }
-      ]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "MEMORY QUALITY CHECK — Self-Reference Detection:\n\nReview the note that was just created/edited. Check the Relations section for self-referential relations where the target entity matches the current note's title.\n\nExample of a self-referential relation (BAD):\n- Note title: \"My Example Note\"\n- Relation: `implements [[My Example Note]]`\n\nIf ANY self-referential relation is found:\n- WARN the user: \"Warning: Self-referential relation detected in '[note title]'. The relation '[[target]]' points to the note itself. This is a known anti-pattern. Consider removing or redirecting this relation.\"\n- Suggest a fix.\n\nIf no self-referential relations found, say nothing — do not mention this check.\n\nAlso check for cross-project WikiLinks:\n- If the note content contains WikiLinks ([[Target]]) where the target note exists in a DIFFERENT project than the one being written to, warn:\n- \"Warning: Cross-project WikiLink detected: [[target]]. WikiLinks don't work across project boundaries. Use text format instead: 'Target Title' (other-project).\"\n\nIf no issues found, remain completely silent about this check."
-        }
-      ]
-    }
-  ],
-  "UserPromptSubmit": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' check-memory-triggers",
-          "async": false
-        }
-      ]
-    }
-  ],
-  "PreCompact": [
-    {
-      "hooks": [
-        {
-          "type": "prompt",
-          "prompt": "MEMORY CONTEXT PRESERVATION — Pre-Compaction Summary:\n\nBefore context is compacted, preserve the following information in your summary:\n\n1. **Active Memory Project**: Which Basic Memory project is selected for this session\n2. **Open Items/Issues**: Any problems identified but not yet resolved\n3. **Pending Tasks**: Work that was planned but not yet started or completed\n4. **Skipped/Deferred Items**: Anything the user said they'd handle later, or issues you raised that the user chose to defer (e.g., \"we'll fix that later\", \"skip that for now\", \"handle it next time\")\n5. **In-Progress Operations**: Any multi-step memory operations currently underway (consolidation, archiving, migration)\n6. **Key Decisions Made**: Important decisions about note organization, project structure, or rules that should persist\n\nInclude this context in the compaction summary so it survives context compression. Format it clearly so it can be picked up after compaction."
-        }
-      ]
-    }
-  ]
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' session-start",
+            "async": false
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__basic-memory__write_note|mcp__plugin_basic-memory-toolkit_basic-memory__write_note",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' scripts/validate-note blocking",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note|mcp__plugin_basic-memory-toolkit_basic-memory__write_note|mcp__plugin_basic-memory-toolkit_basic-memory__edit_note",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' scripts/validate-note warning",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' check-memory-triggers",
+            "async": false
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "MEMORY CONTEXT PRESERVATION — Pre-Compaction Summary:\n\nBefore context is compacted, preserve the following information in your summary:\n\n1. **Active Memory Project**: Which Basic Memory project is selected for this session\n2. **Open Items/Issues**: Any problems identified but not yet resolved\n3. **Pending Tasks**: Work that was planned but not yet started or completed\n4. **Skipped/Deferred Items**: Anything the user said they'd handle later, or issues you raised that the user chose to defer\n5. **In-Progress Operations**: Any multi-step memory operations currently underway\n6. **Key Decisions Made**: Important decisions about note organization, project structure, or rules that should persist\n\nInclude this context in the compaction summary so it survives context compression."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If significant technical decisions, architectural insights, bug fixes, or coding patterns were discussed in this session, suggest: 'Would you like me to capture key insights from this session to memory?' Keep silent if the conversation was purely about memory organization or maintenance."
+          }
+        ]
+      }
+    ]
   }
 }

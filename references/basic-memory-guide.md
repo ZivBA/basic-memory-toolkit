@@ -119,6 +119,11 @@
   <format_1>memory://title</format_1>
   <format_2>memory://folder/title</format_2>
   <format_3>memory://permalink</format_3>
+  <format_4>memory://project-name/folder/title (cross-project, unambiguous)</format_4>
+  <cross_project_examples>
+    memory://main/docs/authentication
+    memory://edifact-pipeline/pipeline-integration/EDIFACT PNR Processing Pipeline
+  </cross_project_examples>
 </memory_urls>
 
 <semantic_markup>
