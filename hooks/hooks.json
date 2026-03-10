@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "If significant technical decisions, architectural insights, bug fixes, or coding patterns were discussed in this session, suggest: 'Would you like me to capture key insights from this session to memory?' Keep silent if the conversation was purely about memory organization or maintenance."
+            "prompt": "Evaluate whether this session contained significant technical decisions, architectural insights, bug fixes, or coding patterns worth preserving in memory.\n\nIf YES — return decision 'block' with a systemMessage suggesting: 'Would you like me to capture key insights from this session to memory?'\n\nIf NO (session was purely about memory organization, maintenance, or trivial changes) — return decision 'approve' to allow the session to end normally."
           }
         ]
       }
