@@ -1,16 +1,135 @@
 #!/usr/bin/env bash
 # SessionStart hook for basic-memory-toolkit plugin
+# Handles: first-run detection, version-update notifications, project selection
 
 set -euo pipefail
 
-session_context="<EXTREMELY_IMPORTANT>\\nMEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:\\n\\n1. Call list_memory_projects() to get available projects.\\n2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).\\n3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?\\n4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?\\n5. Remember the selected project for all subsequent memory operations in this conversation.\\n\\nThis is mandatory. Do not skip this step.\\n</EXTREMELY_IMPORTANT>"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+FLAG_FILE="${HOME}/.claude/basic-memory-toolkit.initialized"
+PLUGIN_JSON="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
+
+get_plugin_version() {
+  if command -v jq &>/dev/null && [ -f "$PLUGIN_JSON" ]; then
+    jq -r '.version // "unknown"' "$PLUGIN_JSON"
+  else
+    echo "unknown"
+  fi
+}
+
+get_stored_version() {
+  if [ -f "$FLAG_FILE" ]; then
+    cat "$FLAG_FILE" 2>/dev/null || echo ""
+  else
+    echo ""
+  fi
+}
+
+store_version() {
+  local version="$1"
+  mkdir -p "$(dirname "$FLAG_FILE")"
+  printf '%s' "$version" > "$FLAG_FILE"
+}
+
+build_first_run_message() {
+  local version="$1"
+  cat <<FIRST_RUN
+<EXTREMELY_IMPORTANT>
+BASIC MEMORY TOOLKIT — FIRST INSTALL (v${version})
+
+Welcome! To get the most out of this plugin, complete these setup steps:
+
+**Step 1 — Import Seed Rules (Recommended)**
+Ask Claude: "Create the memory-rules project and import the seed rules from the plugin"
+This imports quality standards that skills reference at runtime. Without it, skills work but lack detailed quality rules.
+
+**Step 2 — Marketplace Auto-Updates (Optional)**
+For reliable automatic plugin updates, set a GitHub personal access token in your shell config (.bashrc/.zshrc):
+  export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+Without a token, updates still work for public repos but may fail silently under GitHub API rate limits (60 unauthenticated requests/hour vs 5,000 authenticated).
+
+**Step 3 — Project Selection**
+MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+
+1. Call list_memory_projects() to get available projects.
+2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
+3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
+4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
+5. Remember the selected project for all subsequent memory operations in this conversation.
+
+Present Steps 1-2 as a brief welcome note to the user. Step 3 is mandatory every session.
+</EXTREMELY_IMPORTANT>
+FIRST_RUN
+}
+
+build_update_message() {
+  local old_version="$1"
+  local new_version="$2"
+  cat <<UPDATE
+<EXTREMELY_IMPORTANT>
+BASIC MEMORY TOOLKIT — UPDATED (v${old_version} → v${new_version})
+
+The plugin has been updated. Inform the user briefly:
+- "Basic Memory Toolkit updated to v${new_version}"
+- If there are new features or breaking changes, they will be listed in the plugin's README or CHANGELOG.
+
+Then proceed with normal session initialization:
+
+MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+
+1. Call list_memory_projects() to get available projects.
+2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
+3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
+4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
+5. Remember the selected project for all subsequent memory operations in this conversation.
+
+This is mandatory. Do not skip this step.
+</EXTREMELY_IMPORTANT>
+UPDATE
+}
+
+build_normal_message() {
+  cat <<NORMAL
+<EXTREMELY_IMPORTANT>
+MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+
+1. Call list_memory_projects() to get available projects.
+2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
+3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
+4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
+5. Remember the selected project for all subsequent memory operations in this conversation.
+
+This is mandatory. Do not skip this step.
+</EXTREMELY_IMPORTANT>
+NORMAL
+}
+
+# --- Main ---
+
+plugin_version="$(get_plugin_version)"
+stored_version="$(get_stored_version)"
+
+if [ -z "$stored_version" ]; then
+  # First install
+  session_context="$(build_first_run_message "$plugin_version")"
+  store_version "$plugin_version"
+elif [ "$stored_version" != "$plugin_version" ]; then
+  # Version update
+  session_context="$(build_update_message "$stored_version" "$plugin_version")"
+  store_version "$plugin_version"
+else
+  # Normal session
+  session_context="$(build_normal_message)"
+fi
+
+# Escape for JSON embedding
+escaped_context="$(echo "$session_context" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}')"
 
 cat <<EOF
 {
-  "additional_context": "${session_context}",
+  "additional_context": "${escaped_context}",
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "${session_context}"
+    "additionalContext": "${escaped_context}"
   }
 }
 EOF

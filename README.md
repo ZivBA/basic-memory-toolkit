@@ -46,7 +46,11 @@ claude --plugin-dir /path/to/basic-memory-toolkit
 cp -r basic-memory-toolkit /your/project/.claude-plugin/
 ```
 
-## Post-Install Setup: Memory Rules
+## First Run
+
+On first install, the plugin displays a welcome message with setup steps. On version updates, it notifies you of the new version. This is controlled by a version-stamped flag file at `~/.claude/basic-memory-toolkit.initialized`.
+
+### Step 1: Import Seed Rules (Recommended)
 
 The plugin includes seed data for the `memory-rules` project, which provides quality standards that skills reference at runtime. To import:
 
@@ -55,6 +59,25 @@ The plugin includes seed data for the `memory-rules` project, which provides qua
 3. Claude will use the `create-new-memory-project` skill to set up the project and import the bundled rules from `seed/memory-rules/`
 
 Without this step, skills will still work but won't have access to detailed quality rules.
+
+### Step 2: Marketplace Auto-Updates (Optional)
+
+The plugin auto-updates from GitHub when installed via marketplace. For public repos this works without authentication, but may fail silently under GitHub API rate limits (60 unauthenticated requests/hour).
+
+For reliable auto-updates, set a GitHub personal access token in your shell config:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+```
+
+This raises the limit to 5,000 requests/hour. The token is your standard GitHub PAT — no special scopes are needed for public repos.
+
+| Provider | Environment Variables | Notes |
+|----------|----------------------|-------|
+| GitHub | `GITHUB_TOKEN` or `GH_TOKEN` | Personal access token or GitHub App token |
+| GitLab | `GITLAB_TOKEN` or `GL_TOKEN` | Personal access token or project token |
+| Bitbucket | `BITBUCKET_TOKEN` | App password or repository access token |
 
 ## Components
 

@@ -38,6 +38,7 @@
     ],
     "UserPromptSubmit": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -49,6 +50,7 @@
     ],
     "PreCompact": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "prompt",
@@ -59,6 +61,7 @@
     ],
     "Stop": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "prompt",
