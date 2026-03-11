@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Stop hook: suggest capturing session insights to memory
+# Uses transcript length as heuristic for session significance
+# Outputs JSON decision: block (suggest capture) or approve (silent)
+
+set -euo pipefail
+
+# Read hook input from stdin
+input="$(cat)"
+
+# Extract transcript path
+transcript_path=""
+if command -v jq &>/dev/null; then
+  transcript_path="$(echo "$input" | jq -r '.transcript_path // empty')"
+fi
+
+# Heuristic: count transcript lines as proxy for session substance
+line_count=0
+if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+  line_count="$(wc -l < "$transcript_path")"
+fi
+
+# Threshold: sessions under 50 lines are trivial (quick Q&A, reloads, etc.)
+THRESHOLD=50
+
+if [ "$line_count" -gt "$THRESHOLD" ]; then
+  cat <<'EOF'
+{
+  "decision": "block",
+  "reason": "Substantial session detected — reviewing for insights to capture",
+  "systemMessage": "This session appears to contain substantial work. If significant technical decisions, architectural insights, bug fixes, or coding patterns were discussed, suggest to the user: 'Would you like me to capture key insights from this session to memory?' If the session was purely maintenance or organization, respond with just 'No insights to capture' and stop."
+}
+EOF
+else
+  cat <<'EOF'
+{
+  "decision": "approve",
+  "reason": "Brief session — no insights to capture"
+}
+EOF
+fi
+
+exit 0

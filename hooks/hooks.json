@@ -64,8 +64,9 @@
         "matcher": "*",
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Evaluate whether this session contained significant technical decisions, architectural insights, bug fixes, or coding patterns worth preserving in memory.\n\nYou MUST respond with ONLY a valid JSON object, no other text:\n\nIf YES: {\"decision\": \"block\", \"reason\": \"Session contained valuable insights to capture\", \"systemMessage\": \"Would you like me to capture key insights from this session to memory?\"}\n\nIf NO (maintenance, organization, or trivial changes): {\"decision\": \"approve\", \"reason\": \"No significant insights to capture\"}"
+            "type": "command",
+            "command": "'${CLAUDE_PLUGIN_ROOT}/hooks/stop-suggest-capture'",
+            "timeout": 10
           }
         ]
       }
