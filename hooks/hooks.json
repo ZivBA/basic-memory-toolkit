@@ -65,7 +65,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Evaluate whether this session contained significant technical decisions, architectural insights, bug fixes, or coding patterns worth preserving in memory.\n\nIf YES — return decision 'block' with a systemMessage suggesting: 'Would you like me to capture key insights from this session to memory?'\n\nIf NO (session was purely about memory organization, maintenance, or trivial changes) — return decision 'approve' to allow the session to end normally."
+            "prompt": "Evaluate whether this session contained significant technical decisions, architectural insights, bug fixes, or coding patterns worth preserving in memory.\n\nYou MUST respond with ONLY a valid JSON object, no other text:\n\nIf YES: {\"decision\": \"block\", \"reason\": \"Session contained valuable insights to capture\", \"systemMessage\": \"Would you like me to capture key insights from this session to memory?\"}\n\nIf NO (maintenance, organization, or trivial changes): {\"decision\": \"approve\", \"reason\": \"No significant insights to capture\"}"
           }
         ]
       }
