@@ -23,12 +23,14 @@ fi
 # Threshold: sessions under 50 lines are trivial (quick Q&A, reloads, etc.)
 THRESHOLD=50
 
+# Always approve — never block mid-conversation.
+# Use systemMessage as a soft nudge only for substantial sessions.
 if [ "$line_count" -gt "$THRESHOLD" ]; then
   cat <<'EOF'
 {
-  "decision": "block",
-  "reason": "Substantial session detected — reviewing for insights to capture",
-  "systemMessage": "This session appears to contain substantial work. If significant technical decisions, architectural insights, bug fixes, or coding patterns were discussed, suggest to the user: 'Would you like me to capture key insights from this session to memory?' If the session was purely maintenance or organization, respond with just 'No insights to capture' and stop."
+  "decision": "approve",
+  "reason": "Session has substantial content",
+  "systemMessage": "Reminder: if the user appears to be ending this session and significant technical decisions, architectural insights, or coding patterns were discussed, briefly suggest capturing key insights to memory. Otherwise, stay silent about this."
 }
 EOF
 else
