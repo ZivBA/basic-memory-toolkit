@@ -1,45 +1,65 @@
 #!/usr/bin/env bash
 # Stop hook: suggest capturing session insights to memory
-# Uses transcript length as heuristic for session significance
-# Outputs JSON decision: block (suggest capture) or approve (silent)
+# Uses user turn count + once-per-session flag to avoid noise
+# Only suggests capture once per session, after meaningful interaction
 
 set -euo pipefail
+
+SUGGEST_DIR="${HOME}/.claude/basic-memory-toolkit-stops"
 
 # Read hook input from stdin
 input="$(cat)"
 
-# Extract transcript path
+# Extract session_id and transcript_path
+session_id=""
 transcript_path=""
 if command -v jq &>/dev/null; then
+  session_id="$(echo "$input" | jq -r '.session_id // empty')"
   transcript_path="$(echo "$input" | jq -r '.transcript_path // empty')"
 fi
 
-# Heuristic: count transcript lines as proxy for session substance
-line_count=0
-if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-  line_count="$(wc -l < "$transcript_path")"
+# If we can't identify the session, approve silently
+if [ -z "$session_id" ]; then
+  echo '{"decision": "approve", "reason": "No session ID available"}'
+  exit 0
 fi
 
-# Threshold: sessions under 50 lines are trivial (quick Q&A, reloads, etc.)
-THRESHOLD=50
+# Check if we already suggested in this session
+mkdir -p "$SUGGEST_DIR"
+flag_file="${SUGGEST_DIR}/${session_id}"
 
-# Always approve — never block mid-conversation.
-# Use systemMessage as a soft nudge only for substantial sessions.
-if [ "$line_count" -gt "$THRESHOLD" ]; then
+if [ -f "$flag_file" ]; then
+  # Already suggested once this session — approve silently
+  echo '{"decision": "approve", "reason": "Already suggested this session"}'
+  exit 0
+fi
+
+# Count user turns from transcript (type "user" entries)
+user_turns=0
+if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
+  # Match both "type":"user" and "type": "user" (with/without spaces)
+  user_turns="$(grep -cE '"type"\s*:\s*"user"' "$transcript_path" 2>/dev/null || echo 0)"
+fi
+
+# Minimum 5 user turns for a meaningful session
+MIN_TURNS=5
+
+if [ "$user_turns" -ge "$MIN_TURNS" ]; then
+  # Mark that we've suggested for this session
+  touch "$flag_file"
+
   cat <<'EOF'
 {
   "decision": "approve",
-  "reason": "Session has substantial content",
-  "systemMessage": "Reminder: if the user appears to be ending this session and significant technical decisions, architectural insights, or coding patterns were discussed, briefly suggest capturing key insights to memory. Otherwise, stay silent about this."
+  "reason": "Substantial session with insights to consider capturing",
+  "systemMessage": "This session has had meaningful interaction. At the END of your current response, add a brief line: 'Would you like me to capture key insights from this session to memory?' — but ONLY if significant technical decisions, architectural insights, or coding patterns were discussed. If the session was routine maintenance, do NOT mention this."
 }
 EOF
 else
-  cat <<'EOF'
-{
-  "decision": "approve",
-  "reason": "Brief session — no insights to capture"
-}
-EOF
+  echo '{"decision": "approve", "reason": "Session too brief for insight capture"}'
 fi
+
+# Cleanup: remove flag files older than 24 hours (stale sessions)
+find "$SUGGEST_DIR" -type f -mtime +1 -delete 2>/dev/null || true
 
 exit 0
