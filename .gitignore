@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Local session state
+.remember/
+
+# Editor / OS
+.DS_Store
+*.swp
