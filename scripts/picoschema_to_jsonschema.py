@@ -29,21 +29,29 @@ def _extract_frontmatter(markdown_text: str) -> dict:
 
 
 def _parse_value(raw_value: str) -> tuple[str, str]:
-    """Split 'type, description' — return (type_token, description)."""
+    """Split 'type, description' — return (type_token, description).
+
+    The first comma is the delimiter; any additional commas stay in the
+    description. Callers depend on this 'first comma wins' contract when
+    writing picoschema values with commas in descriptions.
+    """
     if "," in raw_value:
         type_token, description = raw_value.split(",", 1)
         return type_token.strip(), description.strip()
     return raw_value.strip(), ""
 
 
-def _translate_field(raw_key: str, raw_value) -> tuple[str, bool, dict]:
+def _translate_field(raw_key: str, raw_value: str) -> tuple[str, bool, dict]:
     """Translate one picoschema field.
 
     Returns (field_name, is_required, json_schema_fragment).
     """
     # Strip optional marker
     is_required = not raw_key.endswith("?") and "?(" not in raw_key
-    # Normalize key — remove trailing ? and any (modifier)
+    # Normalize key — handle plain `field?` and modifier `field?(array)`.
+    # First rstrip("?") removes the trailing ? from plain optional keys.
+    # split("(")[0] trims anything from "(" onward for modifier keys,
+    # leaving "field?" which the final rstrip("?") strips to "field".
     name = raw_key.rstrip("?").split("(")[0].rstrip("?")
     # The raw_key may look like "field?(array)" — extract modifier
     modifier = None
@@ -59,11 +67,17 @@ def _translate_field(raw_key: str, raw_value) -> tuple[str, bool, dict]:
     return name, is_required, fragment
 
 
-def translate_schema_file(path: Path) -> dict:
-    """Read a schema markdown file and return its JSON Schema dict."""
+def translate_schema_file(path: str | Path) -> dict:
+    """Read a schema markdown file and return its JSON Schema dict.
+
+    Raises ValueError if the file is missing frontmatter or lacks an
+    `entity` key — both are mandatory per the picoschema contract.
+    """
     markdown = Path(path).read_text()
     frontmatter = _extract_frontmatter(markdown)
     entity = frontmatter.get("entity")
+    if not entity:
+        raise ValueError(f"Schema file missing required 'entity' key: {path}")
     schema_block = frontmatter.get("schema", {})
 
     properties: dict = {}
