@@ -22,3 +22,9 @@ def test_simple_required():
     input_path, expected = load_fixture("simple_required")
     result = translate_schema_file(input_path)
     assert result == expected
+
+
+def test_with_optional():
+    input_path, expected = load_fixture("with_optional")
+    result = translate_schema_file(input_path)
+    assert result == expected
