@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import yaml
-import pytest
 
 # Will fail import until translator exists — that's the point
 from scripts.picoschema_to_jsonschema import translate_schema_file
