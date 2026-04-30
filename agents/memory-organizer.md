@@ -7,7 +7,7 @@ tools:
   - Read
   - Grep
   - Glob
-  # Direct MCP tools (when basic-memory MCP is configured directly)
+  # basic-memory MCP tools (server installed as a prerequisite — see docs/INSTALL.md)
   - mcp__basic-memory__delete_note
   - mcp__basic-memory__read_content
   - mcp__basic-memory__build_context
@@ -26,25 +26,6 @@ tools:
   - mcp__basic-memory__delete_project
   - mcp__basic-memory__search
   - mcp__basic-memory__fetch
-  # Plugin-qualified MCP tools (when basic-memory is provided via plugin .mcp.json)
-  - mcp__plugin_basic-memory-toolkit_basic-memory__delete_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__read_content
-  - mcp__plugin_basic-memory-toolkit_basic-memory__build_context
-  - mcp__plugin_basic-memory-toolkit_basic-memory__recent_activity
-  - mcp__plugin_basic-memory-toolkit_basic-memory__read_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__search_notes
-  - mcp__plugin_basic-memory-toolkit_basic-memory__view_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__write_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__canvas
-  - mcp__plugin_basic-memory-toolkit_basic-memory__list_directory
-  - mcp__plugin_basic-memory-toolkit_basic-memory__edit_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__move_note
-  - mcp__plugin_basic-memory-toolkit_basic-memory__list_memory_projects
-  - mcp__plugin_basic-memory-toolkit_basic-memory__list_workspaces
-  - mcp__plugin_basic-memory-toolkit_basic-memory__create_memory_project
-  - mcp__plugin_basic-memory-toolkit_basic-memory__delete_project
-  - mcp__plugin_basic-memory-toolkit_basic-memory__search
-  - mcp__plugin_basic-memory-toolkit_basic-memory__fetch
 ---
 
 <examples>

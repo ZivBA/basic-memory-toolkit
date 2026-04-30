@@ -14,7 +14,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "mcp__basic-memory__write_note|mcp__plugin_basic-memory-toolkit_basic-memory__write_note",
+        "matcher": "mcp__basic-memory__write_note",
         "hooks": [
           {
             "type": "command",
@@ -26,7 +26,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note|mcp__plugin_basic-memory-toolkit_basic-memory__write_note|mcp__plugin_basic-memory-toolkit_basic-memory__edit_note",
+        "matcher": "mcp__basic-memory__write_note|mcp__basic-memory__edit_note",
         "hooks": [
           {
             "type": "command",
