@@ -65,6 +65,15 @@ Example stale entry to remove:
 If after cleanup the file has no other servers, delete the file or leave
 `{ "mcpServers": {} }`.
 
+> **Footgun**: Claude Code reads MCP server config from `~/.claude.json`
+> (and project-level `.mcp.json`), **not** from `~/.claude/settings.json`.
+> If you've previously added an `mcpServers` block to
+> `~/.claude/settings.json` thinking it would register an MCP server,
+> that block is dead config — it does nothing. Remove it to avoid
+> confusion. The canonical user-scope location is the top-level
+> `mcpServers` key in `~/.claude.json`, populated by
+> `claude mcp add --scope user`.
+
 #### 3. Verify the migration
 
 After restarting Claude Code, run `/basic-memory-toolkit:doctor` from inside the
@@ -94,3 +103,20 @@ own custom commands or hooks that referenced
 If you need to roll back to v2.x, reinstall the previous plugin version. The
 prerequisite installation does not need to be reverted — basic-memory itself is
 unchanged, only how it's registered with Claude Code differs.
+
+**However**: if you already ran `scripts/setup-prerequisites.cmd` (or
+`claude mcp add basic-memory ...` manually) against v3.0.0+, the standalone
+registration you created will coexist with the rolled-back v2.x bundled
+server, producing the duplicate-registration scenario v3 was designed to
+fix. Tools will appear under both `mcp__basic-memory__*` and
+`mcp__plugin_basic-memory-toolkit_basic-memory__*` namespaces.
+
+To clean up before rollback:
+
+```bash
+claude mcp remove basic-memory --scope <scope-you-used>
+```
+
+Then reinstall v2.x. After rollback, `claude mcp list` should show only
+`plugin_basic-memory-toolkit_basic-memory` (the bundled entry), and tools
+will appear only under the plugin-prefixed namespace.
