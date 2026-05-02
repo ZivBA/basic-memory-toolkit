@@ -22,6 +22,9 @@ Run these checks in parallel where possible. For each, capture output and note p
 - `claude mcp list 2>/dev/null` — list all registered MCP servers; check for `basic-memory` entries
 - `cat ./.mcp.json 2>/dev/null | grep -E "basic-memory|plugin_basic-memory-toolkit"` — project-level MCP config in the current working directory; flag any `plugin_basic-memory-toolkit_basic-memory` references as stale
 
+**Plugin cache hygiene:**
+- `ls ~/.claude/plugins/cache/basic-memory-toolkit/basic-memory-toolkit/ 2>/dev/null` — list cached plugin version directories. Compare against `${CLAUDE_PLUGIN_DATA}/version`. Any directory whose name is **not** the current version is stale and may contain a pre-v3 `.mcp.json` that gets discovered as a phantom registration.
+
 ## Step 2 — LLM-side tool availability check
 
 From your available tools list, count the following:
@@ -50,7 +53,10 @@ Based on findings, classify the situation and report:
 → Report: "❌ basic-memory MCP server not registered with Claude Code. Run `scripts/setup-prerequisites.cmd` to register it (you'll be prompted for scope: user/project/local)."
 
 **Duplicate registration** (both canonical AND plugin-prefixed tools present):
-→ Report: "⚠️ Duplicate MCP registration detected. Remove the legacy `plugin_basic-memory-toolkit_basic-memory` entries from your project's `.mcp.json` (or wherever they appear). See `docs/MIGRATION.md`."
+→ Report: "⚠️ Duplicate MCP registration detected. The likely source is a stale plugin cache version directory containing a pre-v3 `.mcp.json`. Check `~/.claude/plugins/cache/basic-memory-toolkit/basic-memory-toolkit/` — any directory other than the current version (`${CLAUDE_PLUGIN_DATA}/version`) should be removed. After cleanup, restart Claude Code. If the duplicate persists, also check project-level `.mcp.json` files for direct `plugin_basic-memory-toolkit_basic-memory` references. See `docs/MIGRATION.md` step 3a."
+
+**Stale cache version directories** (multiple version dirs found, no duplicate tools yet — pre-emptive flag):
+→ Report: "ℹ️ Multiple cached plugin versions detected: <list>. Only the current version (<version>) is needed. Stale directories may register old `.mcp.json` files. Remove with: `rm -rf ~/.claude/plugins/cache/basic-memory-toolkit/basic-memory-toolkit/<old-version>`."
 
 **Legacy bundled only** (plugin-prefixed tools present, canonical absent):
 → Report: "⚠️ Only the legacy bundled MCP is loaded. Plugin v3.0.0+ removed the bundled server. Run the setup script to register basic-memory canonically, then remove the plugin-prefixed entry from any `.mcp.json` files. See `docs/MIGRATION.md`."

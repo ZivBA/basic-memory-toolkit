@@ -84,12 +84,86 @@ Claude Code session. A healthy migrated state shows:
 - `~/.claude/basic-memory-toolkit.initialized` legacy flag is gone (the session-start
   hook deletes it automatically on first v3.0.0+ session)
 
+#### 3a. If you still see a phantom `plugin:basic-memory-toolkit:basic-memory` entry
+
+Claude Code keeps **per-version snapshots** of every plugin it has ever loaded
+under `~/.claude/plugins/cache/<plugin>/<plugin>/<version>/`, and its MCP
+discovery walks **all** version directories, not just the active one. After
+upgrading to v3, the pre-v3 cache directory will still contain the bundled
+`.mcp.json` and will be discovered as a duplicate registration, showing up as
+`plugin:basic-memory-toolkit:basic-memory: uvx basic-memory mcp` in
+`claude mcp list` and as `mcp__plugin_basic-memory-toolkit_basic-memory__*`
+tools in your tool list.
+
+To clean:
+
+```bash
+# Identify version directories
+ls ~/.claude/plugins/cache/basic-memory-toolkit/basic-memory-toolkit/
+# Example output:
+#   2.0.5  3.0.0
+
+# Remove every directory that isn't the current version
+rm -rf ~/.claude/plugins/cache/basic-memory-toolkit/basic-memory-toolkit/2.0.5
+```
+
+Restart Claude Code; the phantom entry will be gone. Re-run
+`/basic-memory-toolkit:doctor` to confirm.
+
 #### 4. Optional cleanup
 
 The plugin v3.0.0+ session-start hook stores its reconciliation state in
 `${CLAUDE_PLUGIN_DATA}/version` (typically
 `~/.claude/plugins/data/basic-memory-toolkit/version`). To force the welcome /
 migration message to re-fire, delete that file and restart Claude Code.
+
+### Local development testing (feature branches, pre-merge validation)
+
+If you want to test a plugin feature branch in true isolation — without the
+marketplace auto-update mechanic re-syncing your local edits, and without the
+per-version cache aggregation surfacing stale `.mcp.json` entries — use
+`--plugin-dir` against a separately-cloned tree, and **fully deregister the
+marketplace plugin first**.
+
+`enabledPlugins["<name>@<source>"] = false` alone is not sufficient. Claude
+Code will still:
+
+- Re-clone / re-sync the marketplace tree on startup (driven by
+  `~/.claude/settings.json` `extraKnownMarketplaces` and
+  `~/.claude/plugins/known_marketplaces.json`).
+- Copy the marketplace tree into a versioned cache directory.
+- Discover `.mcp.json` from the cached tree, registering its servers regardless
+  of `enabledPlugins` state.
+
+To get a clean test bed, deregister at **all three** layers:
+
+```bash
+# 1. Remove from settings.json's extraKnownMarketplaces
+jq 'del(.extraKnownMarketplaces["basic-memory-toolkit"])' \
+  ~/.claude/settings.json > /tmp/s && mv /tmp/s ~/.claude/settings.json
+
+# 2. Deregister via the CLI (cleans plugins/known_marketplaces.json)
+claude plugin marketplace remove basic-memory-toolkit
+
+# 3. Wipe the marketplace tree and any cached snapshots
+rm -rf ~/.claude/plugins/marketplaces/basic-memory-toolkit
+rm -rf ~/.claude/plugins/cache/basic-memory-toolkit
+
+# 4. Clone the feature branch to a stable local path
+git clone -b <feature-branch> https://github.com/<owner>/basic-memory-toolkit.git \
+  ~/local-plugins/basic-memory-toolkit
+
+# 5. Launch Claude Code with --plugin-dir pointing at the local tree
+claude --plugin-dir ~/local-plugins/basic-memory-toolkit
+```
+
+For persistent local testing (e.g. across systemd-managed sessions), add
+`--plugin-dir` to the command in your service definition rather than passing
+it once.
+
+`/plugin marketplace add` and `/plugin install` (or the CLI equivalents) will
+re-add the marketplace registration when you're ready to switch back to the
+upstream-tracked version.
 
 ### Tool name changes
 
