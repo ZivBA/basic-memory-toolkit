@@ -1,0 +1,13 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: with-optional
+type: object
+required:
+  - name
+properties:
+  name:
+    type: string
+    description: required name
+  nickname:
+    type: string
+    description: optional nickname
+additionalProperties: true

@@ -1,128 +1,232 @@
 #!/usr/bin/env bash
 # SessionStart hook for basic-memory-toolkit plugin
-# Handles: first-run detection, version-update notifications, project selection
+#
+# State machine driven by version reconciliation between:
+#   - Current plugin version  (.claude-plugin/plugin.json)
+#   - Stored version           (${CLAUDE_PLUGIN_DATA}/version)
+#   - Legacy flag (pre-v3.0)   (~/.claude/basic-memory-toolkit.initialized)
+#
+# On version match: silent on welcome/migration/upgrade notices.
+# On mismatch: emit the appropriate notice once, then seed plugin-data version.
+# Project-selection prompt is included in every session (core hook contract).
 
 set -euo pipefail
 
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
-FLAG_FILE="${HOME}/.claude/basic-memory-toolkit.initialized"
+PLUGIN_DATA="${CLAUDE_PLUGIN_DATA:-${HOME}/.claude/plugins/data/basic-memory-toolkit}"
+LEGACY_FLAG="${HOME}/.claude/basic-memory-toolkit.initialized"
 PLUGIN_JSON="${PLUGIN_ROOT}/.claude-plugin/plugin.json"
+VERSION_FILE="${PLUGIN_DATA}/version"
+BM_HOME="${HOME}/.basic-memory"
+
+# --- Helpers ---
 
 get_plugin_version() {
-  if command -v jq &>/dev/null && [ -f "$PLUGIN_JSON" ]; then
+  if command -v jq >/dev/null 2>&1 && [ -f "$PLUGIN_JSON" ]; then
     jq -r '.version // "unknown"' "$PLUGIN_JSON"
   else
     echo "unknown"
   fi
 }
 
-get_stored_version() {
-  if [ -f "$FLAG_FILE" ]; then
-    cat "$FLAG_FILE" 2>/dev/null || echo ""
+read_file_or_empty() {
+  [ -f "$1" ] && cat "$1" 2>/dev/null || true
+}
+
+write_version() {
+  local version="$1"
+  mkdir -p "$PLUGIN_DATA"
+  printf '%s' "$version" > "$VERSION_FILE"
+}
+
+clear_legacy_flag() {
+  [ -f "$LEGACY_FLAG" ] && rm -f "$LEGACY_FLAG" || true
+}
+
+is_pre_v3() {
+  case "$1" in
+    1.*|2.*|0.*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# --- State detection ---
+# Echoes one of: matched | routine-bump | migration-v2 | fresh-existing-bm | fresh-newcomer
+
+detect_state() {
+  local current="$1"
+  local stored
+  stored="$(read_file_or_empty "$VERSION_FILE")"
+
+  if [ -n "$stored" ]; then
+    if [ "$stored" = "$current" ]; then
+      echo "matched"
+    else
+      echo "routine-bump"
+    fi
+    return
+  fi
+
+  # Plugin-data version absent; consult legacy flag.
+  local legacy
+  legacy="$(read_file_or_empty "$LEGACY_FLAG")"
+  if [ -n "$legacy" ] && is_pre_v3 "$legacy"; then
+    echo "migration-v2"
+    return
+  fi
+
+  # No prior plugin state. Distinguish newcomer vs existing basic-memory user.
+  if [ -d "$BM_HOME" ]; then
+    echo "fresh-existing-bm"
   else
-    echo ""
+    echo "fresh-newcomer"
   fi
 }
 
-store_version() {
-  local version="$1"
-  mkdir -p "$(dirname "$FLAG_FILE")"
-  printf '%s' "$version" > "$FLAG_FILE"
+# --- Message builders ---
+
+build_project_selection() {
+  cat <<'PROJECT_SELECTION'
+MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+
+1. Call list_memory_projects() to get available projects.
+2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
+3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
+4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
+5. Remember the selected project for all subsequent memory operations in this conversation.
+
+This is mandatory. Do not skip this step.
+PROJECT_SELECTION
 }
 
-build_first_run_message() {
+build_doctor_hint() {
+  echo "For memory-related issues, advise the user to run /basic-memory-toolkit:doctor to diagnose their setup."
+}
+
+build_welcome_newcomer() {
   local version="$1"
-  cat <<FIRST_RUN
-<EXTREMELY_IMPORTANT>
+  cat <<NEWCOMER
 BASIC MEMORY TOOLKIT — FIRST INSTALL (v${version})
 
-Welcome! To get the most out of this plugin, complete these setup steps:
+Welcome! This plugin requires the basic-memory MCP server as a prerequisite.
 
-**Step 1 — Import Seed Rules (Recommended)**
-Ask Claude: "Create the memory-rules project and import the seed rules from the plugin"
-This imports quality standards that skills reference at runtime. Without it, skills work but lack detailed quality rules.
+**Step 1 — Install the prerequisite**
+Run: scripts/setup-prerequisites.cmd from the plugin root, or follow docs/INSTALL.md.
+The script installs uv (if missing), smoke-tests basic-memory, and registers the MCP server.
 
-**Step 2 — Marketplace Auto-Updates (Optional)**
-For reliable automatic plugin updates, set a GitHub personal access token in your shell config (.bashrc/.zshrc):
-  export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
-Without a token, updates still work for public repos but may fail silently under GitHub API rate limits (60 unauthenticated requests/hour vs 5,000 authenticated).
+**Step 2 — Import seed rules (recommended)**
+Ask the assistant: "Create the memory-rules project and import the seed rules from the plugin"
 
-**Step 3 — Project Selection**
-MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+**Step 3 — Marketplace auto-updates (optional)**
+For reliable plugin updates set GITHUB_TOKEN in your shell config to avoid GitHub API rate limits.
 
-1. Call list_memory_projects() to get available projects.
-2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
-3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
-4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
-5. Remember the selected project for all subsequent memory operations in this conversation.
+$(build_doctor_hint)
 
-Present Steps 1-2 as a brief welcome note to the user. Step 3 is mandatory every session.
-</EXTREMELY_IMPORTANT>
-FIRST_RUN
+To re-trigger this guidance later: delete \${CLAUDE_PLUGIN_DATA}/version and restart Claude Code.
+
+NEWCOMER
 }
 
-build_update_message() {
+build_welcome_existing_bm() {
+  local version="$1"
+  cat <<EXISTING_BM
+BASIC MEMORY TOOLKIT — FIRST INSTALL (v${version})
+
+Welcome! Your ~/.basic-memory directory exists, so basic-memory is likely already set up on this machine.
+
+Verify the MCP server is registered with Claude Code by running:
+  claude mcp list
+
+If basic-memory is not listed, run scripts/setup-prerequisites.cmd from the plugin root, or follow docs/INSTALL.md.
+
+$(build_doctor_hint)
+
+To re-trigger this guidance later: delete \${CLAUDE_PLUGIN_DATA}/version and restart Claude Code.
+
+EXISTING_BM
+}
+
+build_migration_v2() {
   local old_version="$1"
   local new_version="$2"
-  cat <<UPDATE
-<EXTREMELY_IMPORTANT>
-BASIC MEMORY TOOLKIT — UPDATED (v${old_version} → v${new_version})
+  cat <<MIGRATION
+BASIC MEMORY TOOLKIT — UPGRADED v${old_version} → v${new_version} (BREAKING CHANGE)
 
-The plugin has been updated. Inform the user briefly:
-- "Basic Memory Toolkit updated to v${new_version}"
-- If there are new features or breaking changes, they will be listed in the plugin's README or CHANGELOG.
+Starting in v3.0.0 the plugin no longer bundles the basic-memory MCP server.
+Users must install and register basic-memory themselves as a prerequisite.
 
-Then proceed with normal session initialization:
+**Action required:**
+1. See docs/MIGRATION.md for the upgrade path.
+2. If you previously relied on the bundled MCP, run scripts/setup-prerequisites.cmd
+   to install the prerequisite and register basic-memory at user/project/local scope.
+3. Check any project-level .mcp.json files for stale entries referencing
+   plugin_basic-memory-toolkit_basic-memory:* and remove them — these signal
+   the bundled MCP server which no longer exists.
 
-MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+After your tools list shows mcp__basic-memory__* entries (NOT
+mcp__plugin_basic-memory-toolkit_basic-memory__*), you are migrated.
 
-1. Call list_memory_projects() to get available projects.
-2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
-3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
-4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
-5. Remember the selected project for all subsequent memory operations in this conversation.
+$(build_doctor_hint)
 
-This is mandatory. Do not skip this step.
-</EXTREMELY_IMPORTANT>
-UPDATE
+MIGRATION
 }
 
-build_normal_message() {
-  cat <<NORMAL
-<EXTREMELY_IMPORTANT>
-MEMORY TOOLKIT SESSION INITIALIZATION — YOU MUST DO THIS BEFORE RESPONDING TO THE USER:
+build_routine_bump() {
+  local old_version="$1"
+  local new_version="$2"
+  cat <<BUMP
+BASIC MEMORY TOOLKIT — UPDATED (v${old_version} → v${new_version})
 
-1. Call list_memory_projects() to get available projects.
-2. Check if the current working directory path contains any project name from the list (e.g., if CWD is /home/user/repos/phone-refactor, match against phone-refactor project).
-3. If a match is found: Ask the user — I detected the Basic Memory project [matched-project] matches your current directory. Would you like to use it for this session, or choose a different project?
-4. If no match is found: Show the full project list and ask — Which Basic Memory project should I use for this session?
-5. Remember the selected project for all subsequent memory operations in this conversation.
+Plugin updated. See README or CHANGELOG for changes.
 
-This is mandatory. Do not skip this step.
-</EXTREMELY_IMPORTANT>
-NORMAL
+$(build_doctor_hint)
+
+BUMP
 }
 
 # --- Main ---
 
 plugin_version="$(get_plugin_version)"
-stored_version="$(get_stored_version)"
+state="$(detect_state "$plugin_version")"
 
-if [ -z "$stored_version" ]; then
-  # First install
-  session_context="$(build_first_run_message "$plugin_version")"
-  store_version "$plugin_version"
-elif [ "$stored_version" != "$plugin_version" ]; then
-  # Version update
-  session_context="$(build_update_message "$stored_version" "$plugin_version")"
-  store_version "$plugin_version"
+case "$state" in
+  matched)
+    notice=""
+    ;;
+  routine-bump)
+    notice="$(build_routine_bump "$(read_file_or_empty "$VERSION_FILE")" "$plugin_version")"
+    write_version "$plugin_version"
+    ;;
+  migration-v2)
+    notice="$(build_migration_v2 "$(read_file_or_empty "$LEGACY_FLAG")" "$plugin_version")"
+    write_version "$plugin_version"
+    clear_legacy_flag
+    ;;
+  fresh-existing-bm)
+    notice="$(build_welcome_existing_bm "$plugin_version")"
+    write_version "$plugin_version"
+    ;;
+  fresh-newcomer)
+    notice="$(build_welcome_newcomer "$plugin_version")"
+    write_version "$plugin_version"
+    ;;
+esac
+
+# Compose the final session context. Project selection is always included.
+if [ -n "$notice" ]; then
+  session_context="<EXTREMELY_IMPORTANT>
+${notice}
+
+$(build_project_selection)
+</EXTREMELY_IMPORTANT>"
 else
-  # Normal session
-  session_context="$(build_normal_message)"
+  session_context="<EXTREMELY_IMPORTANT>
+$(build_project_selection)
+</EXTREMELY_IMPORTANT>"
 fi
 
-# Escape for JSON embedding
-escaped_context="$(echo "$session_context" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk '{printf "%s\\n", $0}')"
+# Escape for JSON embedding (preserve newlines as literal \n)
+escaped_context="$(printf '%s' "$session_context" | sed 's/\\/\\\\/g; s/"/\\"/g' | awk 'BEGIN{ORS=""} {print (NR==1?"":"\\n") $0}')"
 
 cat <<EOF
 {

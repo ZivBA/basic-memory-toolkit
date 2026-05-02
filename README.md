@@ -15,40 +15,70 @@ This toolkit adds development-focused features (two-tier validation, schema type
 ## Features
 
 - **13 specialized skills** for note creation, editing, searching, consolidation, validation, and knowledge capture
-- **7 slash commands** for quick workflows: `/remember`, `/continue`, `/organize`, `/research`, `/dev-session`, `/capture-decision`, `/validate-project`
+- **8 slash commands** for quick workflows: `/remember`, `/continue`, `/organize`, `/research`, `/dev-session`, `/capture-decision`, `/validate-project`, `/doctor`
 - **8 schema definitions** for development-focused note types (bug-report, design-decision, code-pattern, etc.)
 - **Memory organizer agent** for autonomous multi-project knowledge management
 - **6 automated hooks** for session management, validation, quality checks, and context preservation
 - **Two-tier validation** — instant inline checks (PreToolUse) + thorough CLI validators (batch)
-- **Basic Memory MCP server** bundled via uvx for zero-config setup
+- **Polyglot setup script** (Linux/macOS/Windows) for prerequisite installation and MCP registration
 - **Memory rules seed data** for bootstrapping quality standards
 
 ## Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- Python 3.10+ (for basic-memory)
-- Claude Code CLI
+The plugin requires the **basic-memory** MCP server as an external prerequisite (no longer bundled — see [docs/MIGRATION.md](docs/MIGRATION.md) if upgrading from v2.x).
+
+| Requirement | Purpose |
+|---|---|
+| [uv](https://docs.astral.sh/uv/) | Runs the basic-memory MCP server via `uvx` |
+| `basic-memory` | The MCP server itself (auto-installed on first `uvx` invocation) |
+| Claude Code CLI | Registers the MCP server with `claude mcp add` |
+
+The setup script (Step 2 below) installs `uv` and registers the MCP server for you. See [docs/INSTALL.md](docs/INSTALL.md) for full details, manual install steps, and MCP scope configuration.
 
 ## Installation
 
-### Option 1: From GitHub (recommended)
+### Step 1: Install the plugin
+
+**Option A — From GitHub marketplace (recommended)**
 ```bash
 claude plugin marketplace add https://github.com/ZivBA/basic-memory-toolkit.git basic-memory-toolkit
 ```
 
-### Option 2: Plugin Directory (local development)
+**Option B — Local plugin directory (development)**
 ```bash
 claude --plugin-dir /path/to/basic-memory-toolkit
 ```
 
-### Option 3: Copy to Project
+**Option C — Copy to project**
 ```bash
 cp -r basic-memory-toolkit /your/project/.claude-plugin/
 ```
 
+### Step 2: Install the prerequisite
+
+If you installed from the **CLI** (Option A or B without launching Claude yet), run the setup script directly from the plugin directory before starting Claude Code:
+
+```bash
+# Linux / macOS / WSL / Git Bash
+./scripts/setup-prerequisites.cmd
+
+# Windows
+scripts\setup-prerequisites.cmd
+```
+
+If you installed the plugin **from inside an active Claude Code session**, **quit Claude Code first**, then run the setup script. Do not use `/reload-plugins` — the script registers an MCP server via `claude mcp add`, which is best applied with no live session holding config state.
+
+The script detects `uv`, installs it via the official Astral installer if missing, smoke-tests `basic-memory`, prompts for MCP registration scope, and registers the server. After it completes, start (or restart) Claude Code.
+
+### Step 3: Verify
+
+Inside Claude Code, run `/basic-memory-toolkit:doctor` for a full diagnostic report.
+
 ## First Run
 
-On first install, the plugin displays a welcome message with setup steps. On version updates, it notifies you of the new version. This is controlled by a version-stamped flag file at `~/.claude/basic-memory-toolkit.initialized`.
+On first install, the plugin displays a welcome message with setup steps. On version updates from v2.x, it shows a migration notice (see [docs/MIGRATION.md](docs/MIGRATION.md)). On routine version bumps it shows a brief "updated" notice. On steady-state sessions (stored version matches plugin.json) the welcome/migration messages are silent — only the standard project-selection prompt fires.
+
+Reconciliation state is stored in `${CLAUDE_PLUGIN_DATA}/version` (typically `~/.claude/plugins/data/basic-memory-toolkit/version`). To force the welcome/migration message to fire again, delete that file and restart Claude Code. The legacy v2.x flag at `~/.claude/basic-memory-toolkit.initialized` is automatically cleaned up on first v3.0.0+ session.
 
 ### Step 1: Import Seed Rules (Recommended)
 
@@ -81,7 +111,7 @@ This raises the limit to 5,000 requests/hour. The token is your standard GitHub 
 
 ## Components
 
-### Slash Commands (7)
+### Slash Commands (8)
 
 | Command | Purpose |
 |---------|---------|
@@ -92,6 +122,7 @@ This raises the limit to 5,000 requests/hour. The token is your standard GitHub 
 | `/dev-session [project]` | Start a development session with full memory context |
 | `/capture-decision [title]` | Capture a design/architectural decision with structured template |
 | `/validate-project [project]` | Run validation suite across all notes in a project |
+| `/doctor` | Diagnose plugin setup, prerequisite, MCP registration, tool availability |
 
 ### Skills (13)
 
@@ -128,7 +159,7 @@ Development-focused Picoschema definitions for structured note types:
 
 ### Agent
 
-- **memory-organizer** — Autonomous agent for multi-project memory navigation, note consolidation, knowledge graph optimization, and quality assessment. Supports both direct and plugin-qualified MCP tool names.
+- **memory-organizer** — Autonomous agent for multi-project memory navigation, note consolidation, knowledge graph optimization, and quality assessment. Uses canonical `mcp__basic-memory__*` tools.
 
 ### Hooks (6)
 
@@ -150,37 +181,36 @@ Two-tier validation architecture:
 
 ### MCP Server
 
-Bundles Basic Memory MCP server configuration using `uvx` (zero-install). For manual pip installations, update `.mcp.json`:
+The basic-memory MCP server is an external prerequisite. Register it via the setup script (recommended) or manually:
 
-```json
-{
-  "mcpServers": {
-    "basic-memory": {
-      "type": "stdio",
-      "command": "basic-memory",
-      "args": ["mcp"],
-      "env": {}
-    }
-  }
-}
+```bash
+claude mcp add basic-memory --scope user -- uvx basic-memory mcp
 ```
+
+For pip-based installations of basic-memory (instead of uvx):
+
+```bash
+claude mcp add basic-memory --scope user -- basic-memory mcp
+```
+
+See [docs/INSTALL.md](docs/INSTALL.md) for full details on registration scopes (user/project/local) and the `~/.basic-memory` server config directory.
 
 ## Directory Structure
 
 ```
 basic-memory-toolkit/
 ├── .claude-plugin/
-│   ├── plugin.json           # Plugin manifest (v2.0.0)
+│   ├── plugin.json           # Plugin manifest (v3.0.0)
 │   └── marketplace.json      # Marketplace registry
-├── .mcp.json                 # Basic Memory MCP server config
-├── commands/                 # 7 slash commands
+├── commands/                 # 8 slash commands
 │   ├── remember.md
 │   ├── continue.md
 │   ├── organize.md
 │   ├── research.md
 │   ├── dev-session.md
 │   ├── capture-decision.md
-│   └── validate-project.md
+│   ├── validate-project.md
+│   └── doctor.md
 ├── skills/                   # 13 memory management skills
 │   ├── create-memory-note/
 │   ├── update-memory-note/
@@ -221,7 +251,12 @@ basic-memory-toolkit/
 │   └── run_all.py            # Tier 2 orchestrator
 ├── references/
 │   └── basic-memory-guide.md # Complete Basic Memory usage guide
+├── scripts/
+│   ├── setup-prerequisites.cmd  # Cross-platform prerequisite installer
+│   └── picoschema_to_jsonschema.py
 ├── docs/
+│   ├── INSTALL.md            # Installation guide + MCP scopes
+│   ├── MIGRATION.md          # v2.x → v3.0 migration guide
 │   ├── ENHANCEMENT_PLAN.md   # Development roadmap
 │   └── ARCHITECTURE.md       # Four-tier architecture
 └── seed/

@@ -1,0 +1,14 @@
+$schema: http://json-schema.org/draft-07/schema#
+title: simple-required
+type: object
+required:
+  - name
+  - age
+properties:
+  name:
+    type: string
+    description: the name of the thing
+  age:
+    type: string
+    description: age as a string
+additionalProperties: true
